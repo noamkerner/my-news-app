@@ -16,7 +16,6 @@ const CATEGORIES = [
   "Global Politics & Israel",
 ];
 
-// מיפוי שאילתות חיפוש לכל קטגוריה כדי להבטיח גיוון
 const CATEGORY_QUERIES: Record<string, string> = {
   "World Economics": '("World Economics" OR "Global Markets" OR "Stock Market" OR "Inflation")',
   "AI Developments": '("Artificial Intelligence" OR "OpenAI" OR "Machine Learning" OR "LLM")',
@@ -25,7 +24,6 @@ const CATEGORY_QUERIES: Record<string, string> = {
 };
 
 const fetchArticles = async () => {
-  // יצירת מערך של בקשות fetch - אחת לכל קטגוריה
   const promises = CATEGORIES.map(async (category) => {
     const query = CATEGORY_QUERIES[category];
     const url = `https://gnews.io/api/v4/search?q=${encodeURIComponent(query)}&lang=en&max=10&apikey=${API_KEY}`;
@@ -34,11 +32,10 @@ const fetchArticles = async () => {
       const response = await fetch(url);
       if (!response.ok) {
         const errorData = await response.json();
-        console.error(`GNews API Error for ${category}:`, errorData);
+        console.error(`GNews API Error:`, errorData);
         return [];
       }
       const data = await response.json();
-      
       return (data.articles || []).map((article: any, index: number) => ({
         id: article.url + category + index,
         title: article.title,
@@ -49,7 +46,6 @@ const fetchArticles = async () => {
         image: article.image
       }));
     } catch (error) {
-      console.error(`Network Error fetching ${category}:`, error);
       return [];
     }
   });
@@ -63,7 +59,6 @@ const Index = () => {
   const [refreshing, setRefreshing] = useState(false);
   const [mounted, setMounted] = useState(false);
 
-  // פתרון לשגיאת Hydration (418): מוודא שהקומפוננטה תרונדר רק בצד הלקוח
   useEffect(() => {
     setMounted(true);
   }, []);
@@ -71,26 +66,24 @@ const Index = () => {
   const { data: articles, isLoading, error } = useQuery({
     queryKey: ["articles"],
     queryFn: fetchArticles,
-    staleTime: 1000 * 60 * 60, // שמירה בזיכרון לשעה
-    enabled: mounted, // יתחיל להריץ רק אחרי שהדף נטען
+    staleTime: 1000 * 60 * 60,
+    enabled: mounted,
   });
 
   const handleRefreshNews = async () => {
     setRefreshing(true);
     try {
       await queryClient.refetchQueries({ queryKey: ["articles"] });
-      toast.success("הסקירה עודכנה מכל המקורות!");
+      toast.success("הסקירה עודכנה!");
     } catch (e: any) {
-      toast.error("שגיאה ברענון: " + (e.message || "נסה שוב"));
+      toast.error("שגיאה ברענון");
     } finally {
       setRefreshing(false);
     }
   };
 
-  // אם הדף עדיין לא נטען בדפדפן, נחזיר דף ריק כדי למנוע התנגשות עם Vercel
   if (!mounted) return null;
 
-  // חלוקת הכתבות לקבוצות לפי הקטגוריה
   const articlesByCategory = CATEGORIES.reduce((acc, category) => {
     acc[category] = (articles || [])
       .filter((a: any) => a.category === category)
@@ -101,6 +94,11 @@ const Index = () => {
   return (
     <div className="min-h-screen bg-background text-right" dir="rtl">
       <div className="max-w-2xl mx-auto px-5">
+        {/* בדיקת סנכרון - אם אתה רואה את זה באדום באתר, הסנכרון עובד! */}
+        <div className="py-2 text-center bg-red-100 text-red-600 font-bold text-xs mb-4 rounded">
+          בדיקת סנכרון פעילה - גרסה מעודכנת
+        </div>
+
         <DailyHeader />
 
         <div className="flex justify-center mb-8">
@@ -110,24 +108,16 @@ const Index = () => {
             className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-primary text-primary-foreground font-sans text-sm font-medium hover:bg-primary/90 transition-colors disabled:opacity-60"
           >
             <RefreshCw className={`w-4 h-4 ${refreshing ? "animate-spin" : ""}`} />
-            {refreshing ? "מעדכן את כל הנושאים..." : "רענן סקירה יומית"}
+            {refreshing ? "מעדכן..." : "רענן סקירה יומית"}
           </button>
         </div>
 
         {isLoading && (
-          <div className="text-center py-20">
-            <p className="font-sans text-sm text-muted-foreground animate-pulse">
-              אוסף כתבות מכל הקטגוריות...
-            </p>
-          </div>
+          <div className="text-center py-20 animate-pulse text-muted-foreground">אוסף כתבות...</div>
         )}
 
         {error && (
-          <div className="text-center py-20">
-            <p className="font-sans text-sm text-destructive">
-              חלה שגיאה בטעינת הנתונים. וודא שמפתח ה-API תקין.
-            </p>
-          </div>
+          <div className="text-center py-20 text-destructive">חלה שגיאה בטעינה.</div>
         )}
 
         {!isLoading && !error && (
@@ -139,21 +129,17 @@ const Index = () => {
                 articles={articlesByCategory[category] || []}
               />
             ))}
-
             {(articles?.length === 0) && (
-              <div className="text-center py-20">
-                <p className="text-muted-foreground text-sm">לא נמצאו כתבות חדשות. נסה שוב מאוחר יותר.</p>
-              </div>
+              <div className="text-center py-20 text-muted-foreground text-sm">לא נמצאו כתבות.</div>
             )}
           </div>
         )}
 
         <footer className="border-t mt-6 opacity-20" />
         <p className="text-center font-sans text-[10px] text-muted-foreground py-6 uppercase tracking-widest">
-          Personal Daily Briefing • Multi-Source Feed
+          Personal Daily Briefing
         </p>
       </div>
-
       <DevSettingsPanel />
     </div>
   );
