@@ -1,4 +1,4 @@
-import { ExternalLink } from "lucide-react";
+import { ExternalLink, Calendar } from "lucide-react";
 
 const ArticleCard = ({ article }: { article: any }) => {
   if (!article) return null;
@@ -8,6 +8,14 @@ const ArticleCard = ({ article }: { article: any }) => {
   const link = article.url || article.original_url || "#";
   const source = article.source || "חדשות";
   
+  // חילוץ תאריך חסין
+  const rawDate = article.date || article.pubDate;
+  const displayDate = rawDate ? new Date(rawDate).toLocaleDateString('he-IL', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric'
+  }) : "";
+
   return (
     <a 
       href={link} 
@@ -43,6 +51,13 @@ const ArticleCard = ({ article }: { article: any }) => {
             <p className="text-sm text-slate-500 line-clamp-3 leading-relaxed">
               {summary}
             </p>
+          )}
+
+          {displayDate && (
+            <div className="flex items-center gap-1 flex-row-reverse pt-2 text-[10px] text-slate-400 font-medium">
+              <Calendar className="w-3 h-3" />
+              <span>{displayDate}</span>
+            </div>
           )}
         </div>
       </div>
