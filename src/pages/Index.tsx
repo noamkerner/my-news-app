@@ -9,7 +9,6 @@ import { toast } from "sonner";
 const API_KEY = "319f27d0deb3a90409d0751b4b312819"; 
 
 const fetchArticles = async () => {
-  // ננסה להביא כותרות כלליות - זה הכי יציב ב-API הזה
   const url = `https://gnews.io/api/v4/top-headlines?category=general&lang=en&max=10&apikey=${API_KEY}`;
   
   try {
@@ -26,7 +25,7 @@ const fetchArticles = async () => {
       title: article.title,
       summary: article.description,
       date: article.publishedAt,
-      category: "Global News", // נשים הכל תחת קטגוריה אחת לבדיקה
+      category: "Global News",
       original_url: article.url,
       image: article.image
     }));
@@ -48,7 +47,7 @@ const Index = () => {
     queryKey: ["articles"],
     queryFn: fetchArticles,
     enabled: mounted,
-    retry: 1, // ניסיון אחד נוסף בלבד
+    retry: 1,
   });
 
   if (!mounted) return null;
@@ -57,28 +56,30 @@ const Index = () => {
     <div className="min-h-screen bg-background text-right" dir="rtl">
       <div className="max-w-2xl mx-auto px-5">
         
-        <div className="py-2 text-center bg-green-100 text-green-700 font-bold text-xs mb-4 rounded">
-          מחובר ל-GNews - בדיקת תקשורת
-        </div>
-
         <DailyHeader />
 
         <div className="flex justify-center mb-8">
           <button
             onClick={() => queryClient.refetchQueries({ queryKey: ["articles"] })}
-            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-primary text-primary-foreground text-sm font-medium"
+            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors"
           >
             <RefreshCw className="w-4 h-4" />
             רענן כתבות
           </button>
         </div>
 
-        {isLoading && <div className="text-center py-20 animate-pulse">טוען כתבות אחרונות...</div>}
+        {isLoading && (
+          <div className="text-center py-20 animate-pulse text-muted-foreground">
+            טוען כתבות אחרונות...
+          </div>
+        )}
 
         {error && (
-          <div className="text-center py-20 text-destructive">
-            <p>חלה שגיאה בתקשורת עם GNews.</p>
-            <p className="text-xs opacity-50 mt-2">יתכן שנגמרה המכסה היומית (100 קריאות).</p>
+          <div className="text-center py-20 text-destructive border border-destructive/20 rounded-lg bg-destructive/5 px-4">
+            <p className="font-medium">כרגע לא ניתן לטעון כתבות חדשות</p>
+            <p className="text-xs opacity-70 mt-2">
+              יתכן שהגענו למכסה היומית של ספק התוכן. נסה שוב בעוד כמה שעות.
+            </p>
           </div>
         )}
 
@@ -88,11 +89,13 @@ const Index = () => {
               category="חדשות מהעולם"
               articles={articles || []}
             />
-            {articles?.length === 0 && <p className="text-center">לא נמצאו כתבות כרגע.</p>}
+            {articles?.length === 0 && (
+              <p className="text-center text-muted-foreground">לא נמצאו כתבות כרגע.</p>
+            )}
           </div>
         )}
 
-        <footer className="border-t mt-6 opacity-20" />
+        <footer className="border-t mt-12 opacity-20" />
         <p className="text-center font-sans text-[10px] text-muted-foreground py-6 uppercase tracking-widest">
           Personal Daily Briefing
         </p>
