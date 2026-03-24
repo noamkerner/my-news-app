@@ -6,12 +6,12 @@ interface CategorySectionProps {
 }
 
 const CategorySection = ({ category, articles }: CategorySectionProps) => {
-  // הגנה: אם אין כתבות, אל תציג את הסקשן
   if (!articles || articles.length === 0) return null;
 
   return (
     <div className="space-y-6">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      {/* שינינו ל-lg:grid-cols-3 כדי שיהיו 3 כתבות בשורה במסך רחב */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
         {articles.map((article, index) => (
           <ArticleCard 
             key={article.id || `article-${index}`} 

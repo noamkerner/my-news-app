@@ -8,17 +8,15 @@ import { useState, useEffect } from "react";
 const fetchCategorizedRSS = async () => {
   const categories = {
     "בינה מלאכותית וחדשנות": [
-      "https://www.wired.com/feed/category/ai/latest/rss",
-      "https://www.theverge.com/ai-artificial-intelligence/rss/index.xml"
+      "https://news.google.com/rss/search?q=Artificial+Intelligence&hl=en-US&gl=US&ceid=US:en",
+      "https://techcrunch.com/category/artificial-intelligence/feed/"
     ],
     "מדע וטכנולוגיה": [
       "https://www.wired.com/feed/rss",
-      "https://www.technologyreview.com/feed/",
-      "https://www.nasa.gov/news-release/feed/"
+      "https://www.technologyreview.com/feed/"
     ],
     "כלכלה ושווקים": [
-      "https://www.cnbc.com/id/100003114/device/rss/rss.html",
-      "https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=15839069"
+      "https://www.cnbc.com/id/100003114/device/rss/rss.html"
     ],
     "חדשות מהעולם": [
       "https://news.google.com/rss?hl=en-US&gl=US&ceid=US:en",
@@ -38,9 +36,9 @@ const fetchCategorizedRSS = async () => {
           const mapped = data.items.map((item: any) => ({
             id: item.guid || item.link,
             title: item.title,
-            summary: item.description?.replace(/<[^>]*>?/gm, '').substring(0, 150) + "...",
+            summary: item.description?.replace(/<[^>]*>?/gm, '').substring(0, 120) + "...",
             date: item.pubDate || item.date,
-            source: data.feed.title?.split(' - ')[0] || categoryName,
+            source: data.feed.title?.split(' - ')[0] || "AI News",
             image: item.thumbnail || item.enclosure?.link || null,
             url: item.link
           }));
@@ -61,10 +59,10 @@ const Index = () => {
   useEffect(() => { setMounted(true); }, []);
 
   const { data: categorizedData, isLoading } = useQuery({
-    queryKey: ["categorized-rss-v3"],
+    queryKey: ["categorized-rss-v4"], // שינוי מפתח כדי לרענן זיכרון
     queryFn: fetchCategorizedRSS,
     enabled: mounted,
-    staleTime: 1000 * 60 * 10,
+    staleTime: 0, // רענון מיידי לצורך הבדיקה
   });
 
   if (!mounted) return null;
@@ -78,17 +76,16 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-[#FDFCFB] text-right pb-20" dir="rtl">
-      {/* כאן שיניתי ל-max-w-6xl כדי להרחיב את כל העמוד */}
-      <div className="max-w-6xl mx-auto px-6">
+      <div className="max-w-[1400px] mx-auto px-8"> {/* הגדלנו את המקסימום ל-1400px */}
         <DailyHeader />
         
         <div className="flex justify-center mb-12">
           <button 
-            onClick={() => queryClient.refetchQueries({ queryKey: ["categorized-rss-v3"] })}
-            className="group flex items-center gap-2 px-6 py-2.5 bg-white border border-slate-200 rounded-full shadow-sm hover:shadow-md transition-all active:scale-95"
+            onClick={() => queryClient.refetchQueries({ queryKey: ["categorized-rss-v4"] })}
+            className="group flex items-center gap-2 px-6 py-2.5 bg-white border border-slate-200 rounded-full shadow-sm hover:shadow-md transition-all"
           >
             <RefreshCw className="w-4 h-4 text-slate-400 group-hover:rotate-180 transition-transform duration-700" />
-            <span className="text-sm font-medium text-slate-600 font-sans">REFRESH FEED</span>
+            <span className="text-sm font-medium text-slate-600">רענן סקירה</span>
           </button>
         </div>
 
@@ -97,25 +94,20 @@ const Index = () => {
             {[1, 2, 3, 4, 5, 6].map((i) => <div key={i} className="h-64 bg-slate-100 rounded-2xl" />)}
           </div>
         ) : (
-          <div className="space-y-20">
+          <div className="space-y-24">
             {categorizedData && Object.entries(categorizedData).map(([category, articles]) => (
               articles.length > 0 && (
                 <div key={category} className="animate-in fade-in slide-in-from-bottom-4 duration-1000">
                   <div className="flex items-center gap-3 mb-8 border-b border-slate-100 pb-4">
                     {getIcon(category)}
-                    <h2 className="text-2xl font-bold text-slate-800 tracking-tight">{category}</h2>
+                    <h2 className="text-3xl font-bold text-slate-800 tracking-tight">{category}</h2>
                   </div>
-                  {/* ה-CategorySection כבר אמור לדעת לסדר את הטורים */}
                   <CategorySection category={category} articles={articles} />
                 </div>
               )
             ))}
           </div>
         )}
-
-        <footer className="border-t border-slate-100 mt-24 pt-12 text-center">
-          <p className="font-serif italic text-slate-400 text-sm">Automated Intelligence Curation</p>
-        </footer>
       </div>
       <DevSettingsPanel />
     </div>
