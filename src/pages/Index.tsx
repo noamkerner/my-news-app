@@ -3,7 +3,7 @@ import DailyHeader from "@/components/DailyHeader";
 import CategorySection from "@/components/CategorySection";
 import DevSettingsPanel from "@/components/DevSettingsPanel";
 import { RefreshCw } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { toast } from "sonner";
 
 // --- הגדרות ---
@@ -32,7 +32,11 @@ const fetchArticles = async () => {
     
     try {
       const response = await fetch(url);
-      if (!response.ok) return [];
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error(`GNews API Error for ${category}:`, errorData);
+        return [];
+      }
       const data = await response.json();
       
       return (data.articles || []).map((article: any, index: number) => ({
@@ -40,17 +44,16 @@ const fetchArticles = async () => {
         title: article.title,
         summary: article.description,
         date: article.publishedAt,
-        category: category, // שיוך ישיר לקטגוריה שחיפשנו
+        category: category, 
         original_url: article.url,
         image: article.image
       }));
     } catch (error) {
-      console.error(`Error fetching ${category}:`, error);
+      console.error(`Network Error fetching ${category}:`, error);
       return [];
     }
   });
 
-  // הרצת כל החיפושים במקביל ואיחוד התוצאות
   const allResults = await Promise.all(promises);
   return allResults.flat(); 
 };
@@ -58,11 +61,18 @@ const fetchArticles = async () => {
 const Index = () => {
   const queryClient = useQueryClient();
   const [refreshing, setRefreshing] = useState(false);
+  const [mounted, setMounted] = useState(false);
+
+  // פתרון לשגיאת Hydration (418): מוודא שהקומפוננטה תרונדר רק בצד הלקוח
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const { data: articles, isLoading, error } = useQuery({
     queryKey: ["articles"],
     queryFn: fetchArticles,
     staleTime: 1000 * 60 * 60, // שמירה בזיכרון לשעה
+    enabled: mounted, // יתחיל להריץ רק אחרי שהדף נטען
   });
 
   const handleRefreshNews = async () => {
@@ -77,6 +87,9 @@ const Index = () => {
     }
   };
 
+  // אם הדף עדיין לא נטען בדפדפן, נחזיר דף ריק כדי למנוע התנגשות עם Vercel
+  if (!mounted) return null;
+
   // חלוקת הכתבות לקבוצות לפי הקטגוריה
   const articlesByCategory = CATEGORIES.reduce((acc, category) => {
     acc[category] = (articles || [])
@@ -90,7 +103,6 @@ const Index = () => {
       <div className="max-w-2xl mx-auto px-5">
         <DailyHeader />
 
-        {/* כפתור רענן */}
         <div className="flex justify-center mb-8">
           <button
             onClick={handleRefreshNews}
@@ -113,7 +125,7 @@ const Index = () => {
         {error && (
           <div className="text-center py-20">
             <p className="font-sans text-sm text-destructive">
-              חלה שגיאה בטעינת הנתונים.
+              חלה שגיאה בטעינת הנתונים. וודא שמפתח ה-API תקין.
             </p>
           </div>
         )}
