@@ -1,77 +1,65 @@
-import { ExternalLink, Globe } from "lucide-react";
-import { format, parseISO } from "date-fns";
+import { ExternalLink } from "lucide-react";
 
 interface ArticleCardProps {
-  title: string;
-  summary: string;
-  original_url: string | null;
-  category?: string;
-  date?: string;
-  source_name?: string; // הוספתי שם מקור
+  article: {
+    id: string;
+    title: string;
+    summary: string;
+    date: string;
+    source: string;
+    image?: string;
+    url: string;
+    original_url?: string;
+  };
 }
 
-const categoryLabels: Record<string, string> = {
-  "World Economics": "כלכלה עולמית",
-  "AI Developments": "פיתוחי AI",
-  "Engineering Innovations": "חדשנות הנדסית",
-  "Global Politics & Israel": "פוליטיקה וישראל",
-};
-
-const ArticleCard = ({
-  title,
-  summary,
-  original_url,
-  category,
-  date,
-}: ArticleCardProps) => {
-  // חילוץ שם הדומיין מה-URL אם קיים
-  const source = original_url ? new URL(original_url).hostname.replace("www.", "") : "";
-  const formattedDate = date ? format(parseISO(date), "dd/MM/yyyy") : null;
+const ArticleCard = ({ article }: ArticleCardProps) => {
+  // וידוא שיש לנו לינק תקין (או מה-URL או מה-original_url)
+  const link = article.original_url || article.url;
 
   return (
-    <article className="group py-6 border-b border-border/40 last:border-0 text-right" dir="rtl">
-      <div className="flex flex-col gap-2">
-        
-        {/* שורת מטא-דאטה (קטגוריה ותאריך) */}
-        <div className="flex items-center gap-3 mb-1">
-          {category && (
-            <span className="text-[11px] font-bold tracking-wider uppercase text-primary bg-primary/10 px-2 py-0.5 rounded">
-              {categoryLabels[category] || category}
-            </span>
-          )}
-          <span className="text-[11px] text-muted-foreground font-medium">
-            {formattedDate} {source && ` • ${source}`}
-          </span>
-        </div>
-
-        {/* כותרת הכתבה */}
-        <h3 className="text-xl md:text-2xl font-bold leading-tight text-foreground group-hover:text-primary transition-colors italic-none">
-          <a href={original_url || "#"} target="_blank" rel="noopener noreferrer">
-            {title}
-          </a>
-        </h3>
-
-        {/* תקציר הכתבה - בהיר וקריא */}
-        <p className="text-muted-foreground text-base md:text-lg leading-relaxed font-sans font-light">
-          {summary}
-        </p>
-
-        {/* כפתור פעולה */}
-        {original_url && (
-          <div className="mt-2">
-            <a
-              href={original_url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 text-sm font-semibold text-primary hover:underline decoration-2 underline-offset-4"
-            >
-              לכתבה המקורית 
-              <ExternalLink className="w-4 h-4" />
-            </a>
+    <a 
+      href={link} 
+      target="_blank" 
+      rel="noopener noreferrer" 
+      className="block group cursor-pointer transition-all duration-300"
+    >
+      <div className="flex flex-col gap-3 p-4 rounded-2xl border border-slate-100 bg-white hover:border-slate-300 hover:shadow-md transition-all">
+        {article.image && (
+          <div className="w-full h-48 overflow-hidden rounded-xl">
+            <img 
+              src={article.image} 
+              alt={article.title}
+              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+              onError={(e) => {
+                (e.target as HTMLImageElement).src = "https://images.unsplash.com/photo-1504711432869-efd597cdd042?w=800";
+              }}
+            />
           </div>
         )}
+        
+        <div className="space-y-2">
+          <div className="flex justify-between items-center">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-blue-600 bg-blue-50 px-2 py-0.5 rounded">
+              {article.source}
+            </span>
+            <ExternalLink className="w-3 h-3 text-slate-300 group-hover:text-blue-500 transition-colors" />
+          </div>
+          
+          <h3 className="font-bold text-slate-900 leading-tight group-hover:text-blue-600 transition-colors">
+            {article.title}
+          </h3>
+          
+          <p className="text-sm text-slate-500 line-clamp-2 leading-relaxed">
+            {article.summary}
+          </p>
+          
+          <div className="pt-2 text-[10px] text-slate-400 font-medium">
+            {new Date(article.date).toLocaleDateString('he-IL')}
+          </div>
+        </div>
       </div>
-    </article>
+    </a>
   );
 };
 
